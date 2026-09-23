@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --espresso-black: #0c0806;
+    --espresso-dark: #140e0a;
+    --espresso-rich: #1b120c;
+    --cream: #f4ece1;
+    --cream-soft: #ede2d3;
+    --latte-cream: #f7efe6;
+    --milk-coffee: #cbb094;
+    --milk-coffee-light: #efe4d6;
+    --milk-coffee-muted: #a68a6f;
+    --warm-brown: #8c5a36;
+    --amber: #E9B964;
+    --tea-green: #99D354;
+    --mocha-bronze: #D48B47;
+    --font-serif: 'Fraunces', Georgia, serif;
+    --font-sans: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--espresso-black);
+    color: var(--cream);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #0d0907;
+    color: var(--cream);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, .font-serif {
+    font-family: var(--font-serif);
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background-color: var(--amber);
+    color: var(--espresso-black);
+  }
+
+  /* Sleek Minimalist Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0f0906;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #331e13;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--amber);
+  }
+}
+
+/* Subtle Film Grain Overlay */
+.film-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* Subtle Cinematic Vignette */
+.vignette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 44;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, transparent 55%, rgba(10, 6, 4, 0.6) 100%);
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 35s linear infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Ensure all clickable interactive elements display pointer cursor */
+button,
+a,
+[role="button"],
+input[type="button"],
+input[type="submit"] {
+  cursor: pointer !important;
+}
+
+/* Butter-smooth, non-laggy GPU transitions for buttons and cards */
+button,
+a,
+[role="button"] {
+  will-change: transform;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease,
+              border-color 0.2s ease,
+              color 0.2s ease,
+              box-shadow 0.2s ease;
+}
+
