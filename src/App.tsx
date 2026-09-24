@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import Lenis from 'lenis'
+import { gsap, ScrollTrigger } from './lib/gsap'
 import { FluidShaderCanvas } from './components/3d/FluidShaderCanvas'
 import { Navbar } from './components/ui/Navbar'
 import { CiaoenergyLoader } from './components/ui/CiaoenergyLoader'
-import { GomziHero } from './components/sections/GomziHero'
-import { ThrowableProductDeck } from './components/sections/ThrowableProductDeck'
+import { UnifiedHeroDeckSection } from './components/sections/UnifiedHeroDeckSection'
+import { ProductDetailSection } from './components/sections/ProductDetailSection'
 import { NutritionLabSection } from './components/sections/NutritionLabSection'
 import { SensoryRitualSection } from './components/sections/SensoryRitualSection'
 import { TrinityBundleSection } from './components/sections/TrinityBundleSection'
@@ -30,7 +31,7 @@ export default function App() {
     },
   ])
 
-  // Initialize Lenis smooth scroll & section tone tracking
+  // Initialize Lenis smooth scroll & synchronize with GSAP ScrollTrigger
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -39,34 +40,21 @@ export default function App() {
       touchMultiplier: 1.4,
     })
 
-    function raf(time: number) {
-      lenis.raf(time)
-      requestAnimationFrame(raf)
+    ;(window as any).lenis = lenis
+
+    // Synchronize Lenis scroll with GSAP ScrollTrigger
+    lenis.on('scroll', ScrollTrigger.update)
+
+    const tickerHandler = (time: number) => {
+      lenis.raf(time * 1000)
     }
-    const animId = requestAnimationFrame(raf)
-
-    // Intersection observer for section background fluid tone
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = entry.target.id
-            if (id === 'hero') setCurrentTone('hero')
-            else if (id === 'products-deck') setCurrentTone('atta')
-            else if (id === 'nutrition-lab' || id === 'sensory-ritual') setCurrentTone('lab')
-          }
-        })
-      },
-      { threshold: 0.3 }
-    )
-
-    const sections = document.querySelectorAll('section[id]')
-    sections.forEach((s) => observer.observe(s))
+    gsap.ticker.add(tickerHandler)
+    gsap.ticker.lagSmoothing(0)
 
     return () => {
-      cancelAnimationFrame(animId)
+      gsap.ticker.remove(tickerHandler)
       lenis.destroy()
-      observer.disconnect()
+      delete (window as any).lenis
     }
   }, [])
 
@@ -133,17 +121,6 @@ export default function App() {
 
   const totalCartCount = cartItems.reduce((acc, it) => acc + it.quantity, 0)
 
-  const handleJumpToRitual = useCallback((_productId: string) => {
-    const el = document.getElementById('sensory-ritual')
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [])
-
-  const handleHeroProductSelect = useCallback((p: GomziProduct) => {
-    setHeroProduct(p)
-  }, [])
-
   return (
     <div
       className="relative min-h-screen text-[#f4ece1] transition-colors duration-1000 ease-out"
@@ -168,31 +145,33 @@ export default function App() {
       <div className="vignette-overlay" />
 
       {/* 4. Floating Navbar */}
-      <Navbar cartCount={totalCartCount} onOpenCart={() => setIsCartOpen(true)} />
+      <Navbar
+        cartCount={totalCartCount}
+        onOpenCart={() => setIsCartOpen(true)}
+        activeProduct={heroProduct}
+      />
 
-      {/* 5. Hero Section with Bottom-to-Center 180° Reveal & Reload Randomizer */}
-      <div id="hero">
-        <GomziHero
-          onQuickInspect={(p) => setInspectProduct(p)}
-          onExploreClick={() => {
-            const first = document.getElementById('products-deck')
-            first?.scrollIntoView({ behavior: 'smooth' })
-          }}
-          onProductSelect={handleHeroProductSelect}
-          readyToReveal={!isLoading}
-        />
-      </div>
+      {/* 5. Continuous Merged Hero + Product Deck Pinned Experience */}
+      <UnifiedHeroDeckSection
+        initialProductId={heroProduct.id}
+        onProductChange={(p) => {
+          setHeroProduct(p)
+          setCurrentTone(p.id)
+        }}
+        onAddToCart={handleAddToCart}
+        onQuickInspect={(p) => setInspectProduct(p)}
+        readyToReveal={!isLoading}
+      />
 
-      {/* 6. Main Chapters & Sections */}
+      {/* 6. Product Detail Intro (Clean continuation of selected product) */}
+      <ProductDetailSection
+        product={heroProduct}
+        onAddToCart={handleAddToCart}
+        onQuickInspect={(p) => setInspectProduct(p)}
+      />
+
+      {/* 7. Main Chapters & Sections */}
       <main id="main">
-        {/* Oreo-Style Interactive Throwable Product Deck (Image 2) */}
-        <ThrowableProductDeck
-          activeProductId={heroProduct.id}
-          onProductChange={(p) => setCurrentTone(p.id)}
-          onAddToCart={handleAddToCart}
-          onQuickInspect={(p) => setInspectProduct(p)}
-          onJumpToRitual={handleJumpToRitual}
-        />
 
         {/* Clinical Science Lab (Macronutrient Verification - Image 3) */}
         <NutritionLabSection />
@@ -221,6 +200,7 @@ export default function App() {
         onClose={() => setIsCartOpen(false)}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
+        onClearCart={() => setCartItems([])}
       />
     </div>
   )

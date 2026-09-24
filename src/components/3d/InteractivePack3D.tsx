@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as THREE from 'three'
 import { sound } from '../../utils/soundEngine'
 import { type GomziProduct } from '../../data/gomziProducts'
-import { RotateCcw, FlipHorizontal, Sparkles, ZoomIn } from 'lucide-react'
+import { RotateCcw, FlipHorizontal, ZoomIn } from 'lucide-react'
 
 interface InteractivePack3DProps {
   product: GomziProduct
   className?: string
   priority?: boolean
   onQuickInspect?: () => void
+  revealOnMount?: boolean
 }
 
 /**
@@ -265,7 +266,12 @@ function createShadowTexture(): THREE.CanvasTexture {
   return t
 }
 
-export function InteractivePack3D({ product, className = '', onQuickInspect }: InteractivePack3DProps) {
+export function InteractivePack3D({
+  product,
+  className = '',
+  onQuickInspect,
+  revealOnMount = false,
+}: InteractivePack3DProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isFlipped, setIsFlipped] = useState(false)
@@ -436,7 +442,7 @@ export function InteractivePack3D({ product, className = '', onQuickInspect }: I
     resizeObserver.observe(container)
 
     // Animation loop variables
-    let currentRotY = 0
+    let currentRotY = revealOnMount ? Math.PI : 0
     let currentRotX = 0
     let smoothPointerX = 0
     let smoothPointerY = 0
@@ -564,8 +570,15 @@ export function InteractivePack3D({ product, className = '', onQuickInspect }: I
         </div>
       )}
 
-      {/* Floating 3D Control Pill (Screenshot 2: Wider, Heavy Blur & Elevated Micro-UI) */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-between gap-4 px-6 py-2.5 rounded-full bg-black/75 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.6)] min-w-[320px] sm:min-w-[400px] transition-all duration-300 hover:border-white/35 hover:scale-[1.02]">
+      {/* Floating 3D Control Pill - Dynamically follows product color (Image 5 fix) */}
+      <div
+        className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-between gap-4 px-6 py-2.5 rounded-full backdrop-blur-2xl border shadow-[0_20px_50px_rgba(0,0,0,0.6)] min-w-[320px] sm:min-w-[400px] transition-all duration-700 hover:scale-[1.02]"
+        style={{
+          backgroundColor: `${product.themeColor}dd`,
+          borderColor: `${product.accentColor}44`,
+          boxShadow: `0 20px 50px rgba(0,0,0,0.6), 0 0 25px ${product.accentColor}20`,
+        }}
+      >
         <button
           onClick={handleFlip}
           className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-sm"
@@ -596,16 +609,10 @@ export function InteractivePack3D({ product, className = '', onQuickInspect }: I
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold text-[#f4ece1] bg-white/10 hover:bg-white/20 border border-white/10 transition-all cursor-pointer"
             title="Inspect 360 Fullscreen"
           >
-            <ZoomIn className="w-4 h-4 text-[#E9B964]" />
+            <ZoomIn className="w-4 h-4" style={{ color: product.accentColor }} />
             <span>360° Zoom</span>
           </button>
         )}
-      </div>
-
-      {/* Hint Badge */}
-      <div className="absolute top-4 right-4 pointer-events-none z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#17110d]/60 backdrop-blur-sm border border-white/10 text-[11px] text-[#b5a79a]">
-        <Sparkles className="w-3 h-3 text-[#E9B964]" />
-        <span>Drag to rotate · Foil Sheen</span>
       </div>
     </div>
   )

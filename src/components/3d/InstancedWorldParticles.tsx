@@ -125,7 +125,6 @@ export function InstancedWorldParticles({
     const instancedMesh = new THREE.InstancedMesh(geo, mat, count)
     const dummy = new THREE.Object3D()
 
-    // Particle state tracking
     interface ParticleState {
       baseX: number
       baseY: number
@@ -137,9 +136,10 @@ export function InstancedWorldParticles({
       rotSpeedY: number
       rotSpeedZ: number
       scale: number
-      floatSpeed: number
-      floatPhase: number
-      floatRadius: number
+      fallSpeed: number
+      swaySpeed: number
+      swayPhase: number
+      swayRadius: number
     }
 
     const particles: ParticleState[] = []
@@ -150,22 +150,28 @@ export function InstancedWorldParticles({
       let z = 0
 
       if (fullScreen) {
-        // Disperse across the entire wide background
-        x = (Math.random() - 0.5) * 15
-        y = (Math.random() - 0.5) * 9.5
-        z = (Math.random() - 0.5) * 4.5 - 1.0
+        // Disperse across the entire background
+        x = (Math.random() - 0.5) * 16
+        y = (Math.random() - 0.5) * 11
+        z = (Math.random() - 0.5) * 4.5 - 0.8
       } else {
-        // Orbit around the pack in hero
         const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.5
         const rad = 2.2 + Math.random() * 2.2
         x = Math.cos(angle) * rad + (Math.random() - 0.5) * 0.8
-        y = (Math.random() - 0.5) * 3.8
+        y = (Math.random() - 0.5) * 4.2
         z = (Math.random() - 0.5) * 2.5 - 0.5
       }
 
       const scale = fullScreen
-        ? 0.5 + Math.random() * 0.95
+        ? (type === 'leaves' ? 0.75 + Math.random() * 0.7 : 0.6 + Math.random() * 0.75)
         : 0.5 + Math.random() * 0.85
+
+      // Natural falling speed per particle type
+      const fallSpeed = type === 'grains'
+        ? 0.007 + Math.random() * 0.007
+        : type === 'leaves'
+        ? 0.005 + Math.random() * 0.006
+        : 0.008 + Math.random() * 0.008
 
       particles.push({
         baseX: x,
@@ -174,27 +180,28 @@ export function InstancedWorldParticles({
         rotX: Math.random() * Math.PI * 2,
         rotY: Math.random() * Math.PI * 2,
         rotZ: Math.random() * Math.PI * 2,
-        rotSpeedX: (Math.random() - 0.5) * 0.015,
-        rotSpeedY: (Math.random() - 0.5) * 0.02,
-        rotSpeedZ: (Math.random() - 0.5) * 0.01,
+        rotSpeedX: (Math.random() - 0.5) * (type === 'beans' ? 0.025 : 0.015),
+        rotSpeedY: (Math.random() - 0.5) * (type === 'beans' ? 0.03 : 0.02),
+        rotSpeedZ: (Math.random() - 0.5) * 0.012,
         scale,
-        floatSpeed: 0.6 + Math.random() * 0.8,
-        floatPhase: Math.random() * Math.PI * 2,
-        floatRadius: 0.15 + Math.random() * 0.25,
+        fallSpeed,
+        swaySpeed: 0.8 + Math.random() * 1.2,
+        swayPhase: Math.random() * Math.PI * 2,
+        swayRadius: type === 'leaves' ? 0.45 + Math.random() * 0.4 : 0.15 + Math.random() * 0.2,
       })
     }
 
     scene.add(instancedMesh)
 
     // Lighting
-    const ambLight = new THREE.AmbientLight(0xffffff, 0.9)
+    const ambLight = new THREE.AmbientLight(0xffffff, 1.1)
     scene.add(ambLight)
 
-    const dirLight = new THREE.DirectionalLight(0xfff5e6, 2.0)
+    const dirLight = new THREE.DirectionalLight(0xfff5e6, 2.2)
     dirLight.position.set(4, 5, 5)
     scene.add(dirLight)
 
-    const accentLight = new THREE.PointLight(new THREE.Color(accentColor), 3.5, 8)
+    const accentLight = new THREE.PointLight(new THREE.Color(accentColor), 3.5, 9)
     accentLight.position.set(0, 0, 3)
     scene.add(accentLight)
 
@@ -234,16 +241,29 @@ export function InstancedWorldParticles({
 
       for (let i = 0; i < count; i++) {
         const p = particles[i]
+
+        // 1. Continuous downward gravity drift
+        p.baseY -= p.fallSpeed
+
+        // Wrap around seamlessly from bottom to top
+        if (p.baseY < -6.0) {
+          p.baseY = 6.0 + Math.random() * 1.5
+          p.baseX = (Math.random() - 0.5) * 16
+          p.baseZ = (Math.random() - 0.5) * 4.5 - 0.8
+        }
+
+        // 2. Organic rotation tumbling
         p.rotX += p.rotSpeedX
         p.rotY += p.rotSpeedY
         p.rotZ += p.rotSpeedZ
 
-        const floatY = Math.sin(clock * p.floatSpeed + p.floatPhase) * p.floatRadius
-        const floatX = Math.cos(clock * p.floatSpeed * 0.7 + p.floatPhase) * (p.floatRadius * 0.8)
+        // 3. Gentle horizontal sway
+        const swayX = Math.sin(clock * p.swaySpeed + p.swayPhase) * p.swayRadius
+        const subtleY = Math.cos(clock * p.swaySpeed * 0.8 + p.swayPhase) * 0.08
 
-        // Smooth continuous mouse turbulence without jitter or lag
-        const dx = p.baseX - mouse.x * 3
-        const dy = p.baseY - mouse.y * 2.5
+        // 4. Smooth continuous mouse turbulence without jitter or lag
+        const dx = (p.baseX + swayX) - mouse.x * 3
+        const dy = (p.baseY + subtleY) - mouse.y * 2.5
         const distSq = dx * dx + dy * dy
         let pushX = 0
         let pushY = 0
@@ -255,8 +275,8 @@ export function InstancedWorldParticles({
         }
 
         dummy.position.set(
-          p.baseX + floatX + pushX,
-          p.baseY + floatY + pushY,
+          p.baseX + swayX + pushX,
+          p.baseY + subtleY + pushY,
           p.baseZ
         )
         dummy.rotation.set(p.rotX, p.rotY, p.rotZ)

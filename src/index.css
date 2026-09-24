@@ -15,8 +15,8 @@
     --amber: #E9B964;
     --tea-green: #99D354;
     --mocha-bronze: #D48B47;
-    --font-serif: 'Fraunces', Georgia, serif;
-    --font-sans: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif;
+    --font-serif: 'Instrument Serif', Georgia, serif;
+    --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   }
 
   html {
@@ -36,7 +36,7 @@
 
   h1, h2, h3, h4, .font-serif {
     font-family: var(--font-serif);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
   }
 
   ::selection {

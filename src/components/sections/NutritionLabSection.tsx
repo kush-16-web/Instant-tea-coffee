@@ -130,7 +130,7 @@ export function NutritionLabSection() {
   return (
     <section
       id="nutrition-lab"
-      className="relative py-24 sm:py-32 bg-[#120b08] text-[#f4ece1] overflow-hidden scroll-mt-24 border-t border-[#8c5a36]/30 select-none"
+      className="relative py-24 sm:py-32 bg-[#120b08] text-[#f4ece1] overflow-hidden scroll-mt-24 border-none select-none"
     >
       {/* Ambient Milk-Coffee & Oat Cream Radial Glows */}
       <div
